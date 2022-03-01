@@ -1,25 +1,63 @@
 #include <kipr/wombat.h>
 #include <mobility.h>
-thread srvo_cntrl;
-int setup(){
-    smart_servo(snow_hand,100,1.5,0);
-    smart_servo(snow_arm,0,1.5,0);
-    //smart_servo(3,100,1.5,0);
-    srvo_cntrl = thread_create(servo_control);
-    thread_start(srvo_cntrl);
+#include <mic.h>
+//////////////////////////////////////////////////////////////////////////////////
+
+thread servo_cntrl;
+thread wrist_cntrl;
+
+//------------------------------------------------------------------------------//
+
+int setup(int full){
+    ABORT=0;
+    smart_servo(claw_R,20,1.5,0);
+    smart_servo(claw_L,20,1.5,0);
+    servo_cntrl = thread_create(servo_control);
+    thread_start(servo_cntrl);
+    if(full){
+    wrist_cntrl= thread_create(wrist_lock);
+    thread_start(wrist_cntrl);
+    }
     printf("Create.\n");
+    if(full){calibrate_big_arm();}
     create_connect();
-    printf("--CREATE--\n\nBatt: %d\n\n-CONNECTED-\n",100*get_create_battery_charge()/get_create_battery_capacity());
-    //snow_arm(0);
-    //snow_hand(80);
-    msleep(100);
-    return(1);
+    printf(" --CREATE--\n\n-CONNECTED-\n");
+    return(!ABORT);
 }
 
+//------------------------------------------------------------------------------//
+
 void shutdown(){
-    thread_destroy(srvo_cntrl);
+    motors(0,0);
+    //big_arm(1);
+    thread_destroy(servo_cntrl);
+    thread_destroy(wrist_cntrl);
     msleep(100);
     create_stop();
     msleep(50);
     create_disconnect();
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+
+float ET[74]={0.25,2904,2904,2904,2904,2904,2904,2904,2904,2904,2904,2904,2904,2904,2904,2904,2904,2904,2740,2610,2487,2380,2270,2210,2120,2035,1965,1880,1835,1765,1678,1657,1635,1585,1535,1510,1465,1445,1410,1360,1335,1310,1264,1238,1210,1190,1165,1145,1120,1105,1080,1070,1050,1030,1010,995,975,965,940,933,915,905,897,885,875,850,840,830,820,810,800,790,780,770};
+//			  	0  0.25 0.5  0.75 1	   1.25 1.5  1.75 2    2.25 2.5  2.75 3    3.25 3.5  3.75 4    .25  .5   .75  5    .25  .5   .75  6    .25  .5   .75  7    .25  .5   .75  8    .25  .5   .75  9    .25  .5   .75  10   .25  .5   .75  11   .25  .5   .75  12   .25  .5   .75  13   .25  .5   .75  14 .25 .5  .75 15  .25 .5  .75 16  .25 .5  .75 17  .25 .5  .75  18 .25 .5  .75
+
+float rotate_modif[72]={5,1.03,1.03,1  ,1.13,1.195,1.2,1.18,1.19,1.16,1.19,1.18,1.19,1.16,1.16,1.16,1.16,1.16,1.16,1.07,1.17,1.17,1.17,1.17,1.17,1.17,1.17,1.07,1.17,1.17,1.17,1.17,1.197,1.17,1.17,1.17,1.17,1.17};
+//						   0    5    10  15   20   25   30   35   40   45   50   55   60   65   70   75   80   85   90   95  100  105  110  115  120  125  130   135  140  145  150  155  160 170  175  180    ---
+//////////////////////////////////////////////////////////////////////////////////
+//slope_interp( 'x value' , 'array' )
+float slope_interp(float per,float arr[])
+{if(per<=0){return arr[1];}
+
+ return (arr[(int)((per-0.001)/arr[0]+2)]-arr[(int)((per-0.001)/arr[0]+1)])*(per/arr[0]-(int)(per/arr[0]-0.001))+arr[(int)((per-0.001)/arr[0]+1)];
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+void servo_hdl()
+{
+    
+    //To be worked on
+    
+	//Reese to Reese: this function would enable a certain set of chars to be turned into a smart servo command
 }
